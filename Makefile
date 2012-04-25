@@ -38,7 +38,7 @@ DFLAGS	= -g -DDEBUG -Werror -O0
 PROGS	= tig
 TESTS	= test-graph
 SOURCE	= tig.c tig.h io.c io.h graph.c graph.h
-TXTDOC	= tig.1.txt tigrc.5.txt manual.txt NEWS README INSTALL BUGS
+TXTDOC	= tig.1.asciidoc tigrc.5.asciidoc manual.asciidoc NEWS.asciidoc README.asciidoc INSTALL.asciidoc BUGS.asciidoc
 MANDOC	= tig.1 tigrc.5 tigmanual.7
 HTMLDOC = tig.1.html tigrc.5.html manual.html README.html NEWS.html
 ALLDOC	= $(MANDOC) $(HTMLDOC) manual.html-chunked manual.pdf
@@ -163,7 +163,8 @@ tig.spec: contrib/tig.spec.in
 	    -e 's/@@RELEASE@@/$(RPM_RELEASE)/g' < $< > $@
 
 manual.html: manual.toc
-manual.toc: manual.txt
+manual.html: ASCIIDOC_FLAGS += -ainclude-manual-toc
+manual.toc: manual.asciidoc
 	sed -n '/^\[\[/,/\(---\|~~~\)/p' < $< | while read line; do \
 		case "$$line" in \
 		"----"*)  echo ". <<$$ref>>"; ref= ;; \
@@ -172,33 +173,33 @@ manual.toc: manual.txt
 		*)	   ref="$$ref, $$line" ;; \
 		esac; done | sed 's/\[\[\(.*\)\]\]/\1/' > $@
 
-README.html: README SITES INSTALL asciidoc.conf
+README.html: README.asciidoc SITES.asciidoc INSTALL.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b xhtml11 -d article -a readme $<
 
-NEWS.html: NEWS asciidoc.conf
+NEWS.html: NEWS.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b xhtml11 -d article $<
 
-tigmanual.7: manual.txt
+tigmanual.7: manual.asciidoc
 
-%.1.html : %.1.txt asciidoc.conf
+%.1.html : %.1.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b xhtml11 -d manpage $<
 
-%.1.xml : %.1.txt asciidoc.conf
+%.1.xml : %.1.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b docbook -d manpage $<
 
-%.5.html : %.5.txt asciidoc.conf
+%.5.html : %.5.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b xhtml11 -d manpage $<
 
-%.5.xml : %.5.txt asciidoc.conf
+%.5.xml : %.5.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b docbook -d manpage $<
 
-%.7.xml : %.7.txt asciidoc.conf
+%.7.xml : %.7.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b docbook -d manpage $<
 
-%.html : %.txt asciidoc.conf
+%.html : %.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b xhtml11 -d article -n $<
 
-%.xml : %.txt asciidoc.conf
+%.xml : %.asciidoc asciidoc.conf
 	$(ASCIIDOC) $(ASCIIDOC_FLAGS) -b docbook -d article $<
 
 % : %.xml

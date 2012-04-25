@@ -10,10 +10,18 @@ SYNOPSIS
 --------
 [verse]
 *set*   'variable' *=* 'value'
-*bind*  'keymap' 'key' 'action'
-*color* 'area' 'fgcolor' 'bgcolor' '[attributes]'
-*source* 'path'
+ifndef::backend-docbook[]
 
+endif::backend-docbook[]
+*bind*  'keymap' 'key' 'action'
+ifndef::backend-docbook[]
+
+endif::backend-docbook[]
+*color* 'area' 'fgcolor' 'bgcolor' '[attributes]'
+ifndef::backend-docbook[]
+
+endif::backend-docbook[]
+*source* 'path'
 
 DESCRIPTION
 -----------
@@ -600,5 +608,11 @@ Licensed under the terms of the GNU General Public License.
 
 SEE ALSO
 --------
-manpage:tig[1], manpage:tigmanual[7], git-config(1),
-and the http://jonas.nitro.dk/tig/manual.html[tig manual].
+ifdef::version[]
+manpage:tig[1], manpage:tigmanual[7],
+endif::version[]
+ifndef::version[]
+link:/jonas/tig/blob/asciidoc/tig.1.asciidoc[tig(1)],
+link:/jonas/tig/blob/asciidoc/manual.asciidoc[the tig manual],
+endif::version[]
+git-config(1)
