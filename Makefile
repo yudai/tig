@@ -20,7 +20,7 @@ GITDESC	= $(subst tig-,,$(shell git describe))
 WTDIRTY	= $(if $(shell git diff-index HEAD 2>/dev/null),-dirty)
 VERSION	= $(GITDESC)$(WTDIRTY)
 else
-VERSION	= $(shell test -f VERSION && cat VERSION || echo "unknown-version")
+VERSION	= 0.18
 endif
 ifdef DIST_VERSION
 VERSION = $(DIST_VERSION)
