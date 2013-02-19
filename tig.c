@@ -2916,7 +2916,7 @@ reset_view(struct view *view)
 }
 
 static const char *
-format_arg(const char *name)
+format_arg(struct view *view, const char *name)
 {
 	static struct {
 		const char *name;
@@ -2948,64 +2948,82 @@ format_arg(const char *name)
 }
 
 static bool
-format_argv(const char ***dst_argv, const char *src_argv[], bool first)
+format_append(struct view *view, const char ***dst_argv, const char *arg, bool first)
 {
 	char buf[SIZEOF_STR];
+	size_t bufpos = 0;
+
+	while (arg) {
+		char *next = strstr(arg, "%(");
+		int len = next - arg;
+		const char *value;
+
+		if (!next) {
+			len = strlen(arg);
+			value = "";
+
+		} else {
+			value = format_arg(view, next);
+
+			if (!value) {
+				return FALSE;
+			}
+		}
+
+		if (!string_format_from(buf, &bufpos, "%.*s%s", len, arg, value))
+			return FALSE;
+
+		arg = next ? strchr(next, ')') + 1 : NULL;
+	}
+
+	return argv_append(dst_argv, buf);
+}
+
+static bool
+format_append_array(struct view *view, const char ***dst_argv, const char *src_argv[], bool first)
+{
+	int argc;
+
+	if (!src_argv)
+		return TRUE;
+
+	for (argc = 0; src_argv[argc]; argc++)
+		if (!format_append(view, dst_argv, src_argv[argc], first))
+			return FALSE;
+
+	return src_argv[argc] == NULL;
+}
+
+static bool
+format_argv(struct view *view, const char ***dst_argv, const char *src_argv[], bool first)
+{
 	int argc;
 
 	argv_free(*dst_argv);
 
 	for (argc = 0; src_argv[argc]; argc++) {
 		const char *arg = src_argv[argc];
-		size_t bufpos = 0;
 
 		if (!strcmp(arg, "%(fileargs)")) {
-			if (!argv_append_array(dst_argv, opt_file_argv))
+			if (!format_append_array(view, dst_argv, opt_file_argv, first))
 				break;
-			continue;
 
 		} else if (!strcmp(arg, "%(diffargs)")) {
-			if (!argv_append_array(dst_argv, opt_diff_argv))
+			if (!format_append_array(view, dst_argv, opt_diff_argv, first))
 				break;
-			continue;
 
 		} else if (!strcmp(arg, "%(blameargs)")) {
-			if (!argv_append_array(dst_argv, opt_blame_argv))
+			if (!format_append_array(view, dst_argv, opt_blame_argv, first))
 				break;
-			continue;
 
 		} else if (!strcmp(arg, "%(revargs)") ||
 			   (first && !strcmp(arg, "%(commit)"))) {
-			if (!argv_append_array(dst_argv, opt_rev_argv))
+			if (!format_append_array(view, dst_argv, opt_rev_argv, first))
 				break;
-			continue;
-		}
 
-		while (arg) {
-			char *next = strstr(arg, "%(");
-			int len = next - arg;
-			const char *value;
-
-			if (!next) {
-				len = strlen(arg);
-				value = "";
-
-			} else {
-				value = format_arg(next);
-
-				if (!value) {
-					return FALSE;
-				}
-			}
-
-			if (!string_format_from(buf, &bufpos, "%.*s%s", len, arg, value))
-				return FALSE;
-
-			arg = next ? strchr(next, ')') + 1 : NULL;
-		}
-
-		if (!argv_append(dst_argv, buf))
+		} else if (!format_append(view, dst_argv, arg, first)) {
 			break;
+		}
 	}
 
 	return src_argv[argc] == NULL;
@@ -3092,7 +3110,7 @@ begin_update(struct view *view, const char *dir, const char **argv, enum open_fl
 
 	if (!refresh && argv) {
 		view->dir = dir;
-		if (!format_argv(&view->argv, argv, !view->prev)) {
+		if (!format_argv(view, &view->argv, argv, !view->prev)) {
 			report("Failed to format %s arguments", view->name);
 			return FALSE;
 		}
@@ -3466,7 +3484,7 @@ open_run_request(struct view *view, enum request request)
 		return request;
 	}
 
-	if (format_argv(&argv, req->argv, FALSE)) {
+	if (format_argv(view, &argv, req->argv, FALSE)) {
 		if (req->internal) {
 			char cmd[SIZEOF_STR];
 
@@ -8340,7 +8358,7 @@ run_prompt_command(struct view *view, char *cmd) {
 
 		if (!argv_from_string(argv, &argc, cmd)) {
 			report("Too many arguments");
-		} else if (!format_argv(&next->argv, argv, FALSE)) {
+		} else if (!format_argv(view, &next->argv, argv, FALSE)) {
 			report("Argument formatting failed");
 		} else {
 			next->dir = NULL;
