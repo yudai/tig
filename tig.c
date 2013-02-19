@@ -2938,6 +2938,11 @@ format_arg(struct view *view, const char *name)
 
 	if (!prefixcmp(name, "%(prompt"))
 		return read_prompt("Command argument: ");
+	else if (!prefixcmp(name, "%(width)")) {
+		static char width[16] = "";
+
+		return string_format(width, "%d", view->width) ? width : "";
+	}
 
 	for (i = 0; i < ARRAY_SIZE(vars); i++)
 		if (!strncmp(name, vars[i].name, vars[i].namelen))
@@ -4263,7 +4268,7 @@ diff_open(struct view *view, enum open_flags flags)
 {
 	static const char *diff_argv[] = {
 		"git", "show", opt_encoding_arg, "--pretty=fuller", "--no-color", "--root",
-			"--patch-with-stat",
+			"--patch", "--stat=%(width)",
 			opt_notes_arg, opt_diff_context_arg, opt_ignore_space_arg,
 			"%(diffargs)", "%(commit)", "--", "%(fileargs)", NULL
 	};
