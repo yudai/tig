@@ -8346,6 +8346,9 @@ parse_options(int argc, const char *argv[])
 	} else if (!strcmp(subcommand, "show")) {
 		request = REQ_VIEW_DIFF;
 
+	} else if (!strcmp(subcommand, "log")) {
+		request = REQ_VIEW_LOG;
+
 	} else {
 		subcommand = NULL;
 	}
